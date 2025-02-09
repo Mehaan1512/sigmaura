@@ -1,0 +1,58 @@
+const express = require("express");
+const bodyParser = require("body-parser");
+const axios = require("axios");
+const cors = require("cors");
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(bodyParser.json());
+app.use(cors());
+
+// Replace with actual Alexa API authentication
+const ALEXA_ACCESS_TOKEN = "YOUR_ALEXA_ACCESS_TOKEN";
+
+// Route to process voice commands
+app.post("/ask", async (req, res) => {
+    const { command } = req.body;
+    
+    try {
+        const response = await axios.post("https://api.amazonalexa.com/v1/ask", {
+            command
+        }, {
+            headers: {
+                "Authorization": `Bearer ${ALEXA_ACCESS_TOKEN}`,
+                "Content-Type": "application/json"
+            }
+        });
+        
+        res.json({ message: response.data.message || "Processing..." });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to process command." });
+    }
+});
+
+// Route to toggle smart devices
+app.post("/devices/:deviceName/state", async (req, res) => {
+    const { deviceName } = req.params;
+    const { state } = req.body;
+    
+    try {
+        await axios.post(`https://api.amazonalexa.com/v3/devices/${deviceName}/state`, {
+            state
+        }, {
+            headers: {
+                "Authorization": `Bearer ${ALEXA_ACCESS_TOKEN}`,
+                "Content-Type": "application/json"
+            }
+        });
+        
+        res.json({ message: `Device ${deviceName} turned ${state}` });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to update device state." });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`Sigmaura backend running on port ${PORT}`);
+});
